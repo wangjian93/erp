@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href="./assets/images/favicon.ico" rel="icon">
+    <title>机种成本</title>
+    <link rel="stylesheet" href="./assets/libs/layui/css/layui.css"/>
+    <link rel="stylesheet" href="./assets/module/admin.css?v=315"/>
+    <!--[if lt IE 9]>
+    <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <style>
+        .text-color-blue {
+            color: blue;
+        }
+
+        .text-color-red {
+            color: red;
+        }
+
+        .layui-table td, .layui-table th {
+            border-color: #c0c4cc;
+        }
+
+        .layui-table {
+            color: #0b0a0a;
+        }
+    </style>
+
+</head>
+<body>
+<!-- 页面加载loading -->
+<div class="page-loading">
+    <div class="ball-loader">
+        <span></span><span></span><span></span><span></span>
+    </div>
+</div>
+
+<!-- 正文开始 -->
+<div class="layui-fluid">
+    <div class="layui-card">
+        <div class="layui-card-header">
+            <i class="layui-icon layui-icon-tabs"></i>
+            <span>机种成本</span>
+        </div>
+        <div class="layui-card-body">
+            <div class="layui-form toolbar">
+                <div class="layui-form-item">
+                    <div class="layui-inline">
+                        <label class="layui-form-label">机种：</label>
+                        <div class="layui-input-inline">
+                            <input name="project" class="layui-input" type="text" placeholder="输入机种名称"/>
+                        </div>
+                    </div>
+                    <div class="layui-inline">
+                        <button class="layui-btn icon-btn" lay-filter="searchCost" lay-submit>
+                            <i class="layui-icon">&#xe615;</i>搜索
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <hr>
+
+            <fieldset class="layui-elem-field">
+                <legend>机种成本</legend>
+                <div class="layui-field-box">
+                    <div class="layui-row layui-col-space15">
+                        <div class="layui-col-md5 layui-col-sm6 layui-col-xs12">
+                            <table class="layui-table" style="margin: 15px 0;" lay-size="sm">
+                                <tbody>
+                                <tr>
+                                    <td rowspan="2" width="25%">必要花费</td>
+                                    <td rowspan="2" width="25%" id="necessaryCost"></td>
+                                    <td width="25%" class="text-color-blue">预防成本</td>
+                                    <td width="25%" class="text-color-blue" id="preventionCost"></td>
+                                </tr>
+                                <tr class="text-color-blue">
+                                    <td class="text-color-blue">鉴定成本</td>
+                                    <td class="text-color-blue" id="identifyCost"></td>
+                                </tr>
+                                <tr>
+                                    <td rowspan="2">多余花费</td>
+                                    <td rowspan="2" id="redundantCost"></td>
+                                    <td class="text-color-red">内损成本</td>
+                                    <td class="text-color-red" id="inLossCost"></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-color-red">外损成本</td>
+                                    <td class="text-color-red" id="outLossCost"></td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="layui-col-md7 layui-col-sm12 layui-col-xs12">
+                            <table class="layui-table" id="tableSubject" lay-filter="tableSubject"></table>
+                        </div>
+                    </div>
+                </div>
+            </fieldset>
+
+            <fieldset class="layui-elem-field">
+                <legend>机种各阶段成本详细</legend>
+                <div class="layui-field-box">
+                    <table class="layui-table" id="tableStageCost" lay-filter="tableStageCost" lay-size="sm">
+                        <thead>
+                        <tr>
+                            <th>阶段</th>
+                            <th>Process</th>
+                            <th>投产时间</th>
+                            <th>产出时间</th>
+                            <th>投产数量</th>
+                            <th>产出数量</th>
+<!--                            <th>单位</th>-->
+                            <th>申请单</th>
+                            <th>直接材料成本</th>
+                            <th>治工具</th>
+                            <th>验证费用</th>
+                            <th>生产费用</th>
+                            <th>重工/报废费用</th>
+                            <th>研发人员薪资</th>
+                            <th>RMA</th>
+                            <th>OBA</th>
+                            <th>差旅费</th>
+                        </tr>
+                        </thead>
+                        <tbody id="tableStageCost_tbody">
+
+                        </tbody>
+                    </table>
+                </div>
+            </fieldset>
+
+        </div>
+    </div>
+</div>
+
+<!-- js部分 -->
+<script type="text/javascript" src="./assets/libs/layui/layui.js"></script>
+<script type="text/javascript" src="./assets/js/common.js?v=315"></script>
+<script type="text/javascript" th:inline="none">
+    layui.use(['form', 'table'], function(){
+        var form = layui.form;
+        var table = layui.table;
+        var $ = layui.$;
+
+        // 获取成本数据
+        var postCost = function(project) {
+            if(project == "") {
+                layer.msg("未选择机种");
+                return;
+            }
+            $.post("./cost/projectCost", {project: project}, function(res) {
+                if(res.code == 200) {
+                    tableCostRender(res.data.cost);
+                    tableSubjectRender.reload({data: res.data.costSubject});
+                    tableStageCostRender(res.data.costStage);
+                } else {
+                    layer.msg(res.msg, {icon: 2});
+                }
+            })
+        };
+
+        // 搜索
+        form.on('submit(searchCost)', function (data) {
+            postCost(data.field.project);
+        });
+
+        // 渲染表格
+        var tableCostRender = function(data) {
+            $("#preventionCost").html(data.preventionCost);
+            $("#identifyCost").html(data.identifyCost);
+            $("#inLossCost").html(data.inLossCost);
+            $("#outLossCost").html(data.outLossCost);
+            $("#necessaryCost").html(data.necessaryCost);
+            $("#redundantCost").html(data.redundantCost);
+        };
+
+        var tableSubjectRender = table.render({
+            elem: '#tableSubject',
+            data: [],
+            cols: [[
+                {field: 'stage', sort: true, title: '阶段'},
+                {field: 'preventionCost', sort: true, title: '预防成本'},
+                {field: 'identifyCost', sort: true, title: '鉴定成本'},
+                {field: 'inLossCost', sort: true, title: '内损成本'},
+                {field: 'outLossCost', sort: true, title: '外损成本'}
+            ]],
+            size: 'sm',
+            even: true
+        });
+
+        var tableStageCostRender = function(data) {
+            $("#tableStageCost_tbody").empty();
+
+            for(var i=0; i<data.length; i++) {
+                var rowData = data[i];
+                createRows(rowData, i%2==0 ? false : true);
+            }
+        };
+
+        /**
+         * 成本明细表格创建row
+         */
+        var createRows = function createRow(rowData, flag) {
+            var tr = $("<tr></tr>");
+            var stageDetails =  rowData.stageDetail;
+
+            var rowspan = stageDetails.length;
+            tr.append(createCol(rowspan, rowData.stage));
+            console.log(stageDetails);
+            if(stageDetails.length > 0) {
+                tr.append(createCol(0, stageDetails[0].process));
+                tr.append(createCol(0, stageDetails[0].inDate));
+                tr.append(createCol(0, stageDetails[0].outDate));
+                tr.append(createCol(0, stageDetails[0].inQuantity));
+                tr.append(createCol(0, stageDetails[0].outQuantity));
+                // tr.append(createCol(0, stageDetails[0].units));
+                tr.append(createCol(0, stageDetails[0].eeOrEdOrder));
+            } else {
+                tr.append(createCol(0, ""));
+                tr.append(createCol(0, ""));
+                tr.append(createCol(0, ""));
+                tr.append(createCol(0, ""));
+                tr.append(createCol(0, ""));
+                // tr.append(createCol(0, ""));
+                tr.append(createCol(0, ""));
+            }
+
+            tr.append(createCol(rowspan, rowData.DirectMaterial));
+            tr.append(createCol(rowspan, rowData.Jig));
+            tr.append(createCol(rowspan, rowData.Verification));
+            tr.append(createCol(rowspan, rowData.Production));
+            tr.append(createCol(rowspan, rowData.ReworkScrap));
+            tr.append(createCol(rowspan, rowData.PersonnelSalary));
+            tr.append(createCol(rowspan, rowData.RMA));
+            tr.append(createCol(rowspan, rowData.OBA));
+            tr.append(createCol(rowspan, rowData.Travel));
+            $("#tableStageCost_tbody").append(tr);
+
+            if(flag) {
+                tr.css("background-color", "#f2f2f2");
+            }
+
+            for(var i=1; i<stageDetails.length; i++) {
+                var stageDetail = stageDetails[i];
+                var childTr = $("<tr></tr>");
+                childTr.append(createCol(0, stageDetail.process));
+                childTr.append(createCol(0, stageDetail.inDate));
+                childTr.append(createCol(0, stageDetail.outDate));
+                childTr.append(createCol(0, stageDetail.inQuantity));
+                childTr.append(createCol(0, stageDetail.outQuantity));
+                // childTr.append(createCol(0, stageDetail.units));
+                childTr.append(createCol(0, stageDetail.eeOrEdOrder));
+                $("#tableStageCost_tbody").append(childTr);
+
+                if(flag) {
+                    childTr.css("background-color", "#f2f2f2");
+                }
+            }
+        };
+
+        /**
+         * 成本明细表格创建单元格
+         * @param rowspan 合并行数
+         * @param value 值
+         * @returns {pe.fn.init|jQuery|HTMLElement}
+         */
+        var createCol = function(rowspan, value) {
+            if(value == null) {
+                value = "";
+            }
+            if(rowspan == 0) {
+                return $("<td>"+value+"</td>");
+            } else {
+                return $("<td rowspan='"+rowspan+"'>"+value+"</td>");
+            }
+        };
+
+    });
+</script>
+
+</body>
+</html>

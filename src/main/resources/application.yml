@@ -1,0 +1,56 @@
+debug: false
+server:   # 服务端口配置
+  port: 8083
+  servlet:
+    context-path: /MRP
+
+spring:   # spring配置
+  profiles:
+  active: dev
+  application:
+    name: ERP
+
+  thymeleaf:    # 视图配置
+    prefix: classpath:/static/
+    suffix: .html
+    encoding: utf-8
+    servlet:
+      content-type: text/html
+    cache: false
+
+  datasource:
+    primary:     # MYSQL数据源
+      jdbc-url: jdbc:mysql://localhost:3306/MRPDB?useSSL=false&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+      username: root
+      password: root
+      driver-class-name: com.mysql.jdbc.Driver
+      connection-test-query: select 1
+    secondary:   # MYSQL数据源
+      jdbc-url: jdbc:mysql://localhost:3306/MRPDB?useSSL=false&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+      username: root
+      password: root
+      driver-class-name: com.mysql.jdbc.Driver
+      connection-test-query: select 1
+    third:       # MYSQL数据源
+      jdbc-url: jdbc:mysql://localhost:3306/MRPDB?useSSL=false&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+      username: root
+      password: root
+      driver-class-name: com.mysql.jdbc.Driver
+      connection-test-query: select 1
+
+  jpa:
+    show-sql: true
+    hibernate:
+      primary-dialect: com.ivo.common.mysql.MySQLDialectUTF8
+      secondary-dialect: com.ivo.common.mysql.MySQLDialectUTF8
+      third-dialect: com.ivo.common.mysql.MySQLDialectUTF8
+      ddl-auto: update
+
+  jackson:
+    time-zone: GMT+8
+
+project:
+  shiro:
+    remember-me-timeout: 7
+    global-session-timeout: 1800
+    sessionValidationInterval: 900
