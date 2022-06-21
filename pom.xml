@@ -24,7 +24,7 @@
     <lombok.version>1.18.2</lombok.version>
     <shiro.version>1.4.1</shiro.version>
     <ehcache.version>2.10.6</ehcache.version>
-    <mysql.connector.version>5.1.46</mysql.connector.version>
+    <mysql.connector.version>8.0.28</mysql.connector.version>
     <jtds.version>1.2.4</jtds.version>
     <oracle.version>10.2.0.4.0</oracle.version>
     <poi.version>4.0.0</poi.version>
